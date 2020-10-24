@@ -316,6 +316,12 @@ void usrp_source_impl::set_lo_export_enabled(bool enabled,
 #endif
 }
 
+void
+usrp_source_impl::set_rx_lo_dist(bool enabled, const std::string &name)
+{
+     return _dev->set_rx_lo_dist(enabled, name);
+}
+
 ::uhd::freq_range_t usrp_source_impl::get_lo_freq_range(const std::string& name,
                                                         size_t chan)
 {

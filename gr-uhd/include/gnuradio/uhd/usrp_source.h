@@ -178,6 +178,8 @@ public:
     virtual void
     set_lo_export_enabled(bool enabled, const std::string& name, size_t chan = 0) = 0;
 
+    virtual void set_rx_lo_dist(bool enabled, const std::string &name) = 0;
+
     /*!
      * Returns true if the currently selected LO is being exported.
      * \param name the name of the LO stage to query

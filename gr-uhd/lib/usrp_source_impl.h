@@ -100,6 +100,7 @@ public:
     void set_lo_export_enabled(bool enabled,
                                const std::string& name = ALL_LOS,
                                size_t chan = 0);
+    void set_rx_lo_dist(bool enabled, const std::string &name);
     double set_lo_freq(double freq, const std::string& name, size_t chan);
 
     void issue_stream_cmd(const ::uhd::stream_cmd_t& cmd);
