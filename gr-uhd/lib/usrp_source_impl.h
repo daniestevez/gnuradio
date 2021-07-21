@@ -109,6 +109,7 @@ public:
     void set_filter(const std::string& path,
                     ::uhd::filter_info_base::sptr filter,
                     const size_t chan) override;
+    void set_rx_lo_dist(bool enabled, const std::string &name);
 
     void issue_stream_cmd(const ::uhd::stream_cmd_t& cmd) override;
     void set_recv_timeout(const double timeout, const bool one_packet) override;
