@@ -38,6 +38,7 @@ static const char* __doc_gr_uhd_usrp_source_set_recv_timeout = R"doc()doc";
 
 static const char* __doc_gr_uhd_usrp_source_get_lo_names = R"doc()doc";
 
+static const char* __doc_gr_uhd_usrp_source_set_rx_lo_dist = R"doc()doc";
 
 static const char* __doc_gr_uhd_usrp_source_set_lo_source = R"doc()doc";
 

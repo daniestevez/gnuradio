@@ -127,6 +127,11 @@ void bind_usrp_source(py::module& m)
              py::arg("chan") = 0,
              D(usrp_source, get_lo_freq))
 
+	.def("set_rx_lo_dist",
+	     &usrp_source::set_rx_lo_dist,
+	     py::arg("enabled"),
+	     py::arg("name"),
+	     D(usrp_source, set_rx_lo_dist))
 
         .def("get_lo_freq_range",
              &usrp_source::get_lo_freq_range,
