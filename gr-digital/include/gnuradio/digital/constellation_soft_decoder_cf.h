@@ -42,8 +42,9 @@ public:
      * 'constellation'. Use base() method to get a shared pointer to
      * this base class type.
      */
-    static sptr make(constellation_sptr constellation);
+    static sptr make(constellation_sptr constellation, float npwr=-1);
 
+    virtual void set_npwr(float d_npwr) = 0;
     /*!
      * Set a new constellation object for decoding
      *

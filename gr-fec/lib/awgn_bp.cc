@@ -1,14 +1,20 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2015 Free Software Foundation, Inc.
+ * Copyright 2023 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
- *
+ * 
+ * Re-written by Vlad Fomitchev and Peter Parker
+ * Caliola Engineering LLC
+ * 
+ * Based on the tanh-rule BP algorithm here: https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=ccb90917786903efded5a5536d67fdd1440929c0
+ * Reduced-Complexity Decoding of LDPC Codes by Jinghu Chen et al.
  */
 
 #include <gnuradio/fec/awgn_bp.h>
+#include <iostream>
 
 awgn_bp::awgn_bp(const GF2Mat X, float sgma)
 {
@@ -78,7 +84,7 @@ void awgn_bp::rx_lr_calc(std::vector<float> codeword)
     float y;
     for (int i = 0; i < N; i++) {
         y = codeword[i];
-        rx_lr[i] = exp((-1 * y) / (2 * sigma * sigma));
+        rx_lr[i] = y;
     }
 }
 
@@ -99,39 +105,74 @@ void awgn_bp::spa_initialize()
 
 void awgn_bp::update_chks()
 {
-    double product, _prdct;
+    double sign_prod, tanh_prod, atanh, x;
     int v;
+    int w;
+    int sign;
+    //(step 1) of LLR-BP tanh algo.
+    //iterate over rows of check matrix
     for (int chk = 0; chk < M; chk++) {
-        product = double(1.0);
+        //iterate over nonzero cols of check matrix
         for (int i = 0; i < num_mlist[chk]; i++) {
+            sign_prod = double(1.0);
+            tanh_prod = double(1.0);
             v = mlist[chk][i] - 1;
-            product = product * double(2 / (1 + Q[chk][v]) - 1);
-        }
-        for (int i = 0; i < num_mlist[chk]; i++) {
-            v = mlist[chk][i] - 1;
-            _prdct = product / double(2 / (1 + Q[chk][v]) - 1);
-            R[chk][v] = double((1 - _prdct) / (1 + _prdct));
+            //compute product of sign and and tanh LLR's
+            for (int iprime = 0; iprime < num_mlist[chk]; iprime++){
+                //exclude iprime from the product set
+                if (iprime == i){continue;}
+                w = mlist[chk][iprime] - 1;
+                //compute prod(sign(LLR))
+                if (std::signbit(Q[chk][w])){sign=-1;}
+                else {sign=1;}
+                sign_prod = sign_prod * sign;
+                //remove divide by 2 for manual tanh
+                x = std::abs(Q[chk][w])/2.0;
+                //x = std::abs(Q[chk][w]);
+                //clamp tanh input (this is some BS, FIXME)
+                if (x > 2.35){x = 2.35;}
+                //compute prod(tanh(abs(LLR))/2)
+                tanh_prod = tanh_prod*std::tanh(x);
+                //tanh_prod = tanh_prod*(std::exp(x)-1)/(std::exp(x)+1);
+            }
+            atanh = std::atanh(tanh_prod);
+            //atanh = 0.5*std::log((tanh_prod+1)/(tanh_prod-1));
+            //compute L(m,n)=sign_prod*2tanh^-1(tanh_prod)
+            R[chk][v] = sign_prod*2.0*atanh;
         }
     }
 }
 
 void awgn_bp::update_vars()
 {
-    double _sum, __sum;
-    int c;
+    double _sum, excluded;
+    int c, d;
+    //(step 2) of LLR-BP tanh algo
+    //iterate over columns of check matrix
     for (int var = 0; var < N; var++) {
         _sum = rx_lr[var];
+        excluded = double(0.0);
+        //iterate over nonzero columns of check matrix
         for (int i = 0; i < num_nlist[var]; i++) {
             c = nlist[var][i] - 1;
-            _sum = _sum * double(R[c][var]);
+            //compute sum of LLRs excluding current value
+            for (int iprime = 0; iprime < num_nlist[var]; iprime++){
+                d = nlist[var][iprime] - 1;
+                //save the excluded value
+                if (i==iprime){excluded=R[d][var];}
+                else{_sum = _sum + R[d][var];}
+            }
+            //this is fed back to node checks
+            Q[c][var] = _sum;
         }
-        lr[var] = _sum;
-        for (int i = 0; i < num_nlist[var]; i++) {
-            c = nlist[var][i] - 1;
-            __sum = _sum / R[c][var];
-            Q[c][var] = __sum;
-        }
+        //decision is made on this value
+        lr[var] = _sum+excluded;
+        //lr values _sum+excluded are broken here nan or even Inf. rx_lr is still valid though
+        //std::cout << " lr:" << _sum+excluded << " rx_lr:" << rx_lr[var];
+        //_sum is nan but excluded is valid for first block. then both nan.
+        //std::cout << " _sum:" << _sum << " excluded:" << excluded;
     }
+    //std::cout << std::endl;
 }
 
 std::vector<uint8_t> awgn_bp::get_estimate() { return estimate; }
@@ -149,7 +190,7 @@ void awgn_bp::compute_init_estimate(std::vector<float> rx_word)
 void awgn_bp::decision()
 {
     for (int i = 0; i < N; i++) {
-        if (lr[i] > 1)
+        if (lr[i] < 0)
             estimate[i] = char(1);
         else
             estimate[i] = char(0);
@@ -234,6 +275,7 @@ std::vector<uint8_t> awgn_bp::decode(std::vector<float> rx_word, int* niteration
                 break;
             }
         }
+        //std::cout << "niters:" << *niteration << std::endl;
         return estimate;
     }
 }

@@ -59,7 +59,8 @@ public:
                   std::vector<int> pre_diff_code,
                   unsigned int rotational_symmetry,
                   unsigned int dimensionality,
-                  normalization_t normalization = AMPLITUDE_NORMALIZATION);
+                  normalization_t normalization = AMPLITUDE_NORMALIZATION,
+                  float npwr = 1.0);
     constellation();
     virtual ~constellation();
 
@@ -127,7 +128,7 @@ public:
      *
      * This is expensive to compute.
      */
-    void gen_soft_dec_lut(int precision, float npwr = 1.0);
+    void gen_soft_dec_lut(int precision);
 
     /*! \brief Calculate soft decisions for the given \p sample.
      *
@@ -148,7 +149,7 @@ public:
      * \param sample The complex sample to get the soft decisions.
      * \param npwr Estimate of the noise power (if known).
      */
-    virtual std::vector<float> calc_soft_dec(gr_complex sample, float npwr = 1.0);
+    virtual std::vector<float> calc_soft_dec(gr_complex sample);
 
     /*! \brief Define a soft decision look-up table.
      *
@@ -170,6 +171,8 @@ public:
      */
     void set_soft_dec_lut(const std::vector<std::vector<float>>& soft_dec_lut,
                           int precision);
+
+    void set_npwr(float npwr);
 
     //! Returns True if the soft decision LUT has been defined, False otherwise.
     bool has_soft_dec_lut();
@@ -199,12 +202,13 @@ protected:
     unsigned int d_arity;
     //! The factor by which the user given constellation points were
     //! scaled by to achieve an average amplitude of 1.
-    float d_scalefactor;
+    float d_scalefactor, d_maxamp;
     float d_re_min, d_re_max, d_im_min, d_im_max;
 
     std::vector<std::vector<float>> d_soft_dec_lut;
     int d_lut_precision;
     float d_lut_scale;
+    float d_npwr;
 
     float get_distance(unsigned int index, const gr_complex* sample);
     unsigned int get_closest_point(const gr_complex* sample);
