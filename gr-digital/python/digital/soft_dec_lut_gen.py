@@ -103,25 +103,25 @@ def soft_dec_table(constel, symbols, prec, npwr=1):
     a bit more expensive to generate the LUT, though it should be
     one-time work.
     '''
-    #normalize constellation to unit power
+    # normalize constellation to unit power
     power = 0
     constel = numpy.array(constel)
     for point in constel:
         power += numpy.abs(point)**2
-    amplitude = numpy.sqrt(power/len(constel))
-    constel = constel/amplitude
-    #print("Max soft constellation amp: ", max(abs(constel)), " pwr:", power)
+    amplitude = numpy.sqrt(power / len(constel))
+    constel = constel / amplitude
+    # print("Max soft constellation amp: ", max(abs(constel)), " pwr:", power)
 
-    #padding will simply be 2x the largest re or imag
+    # padding will simply be 2x the largest re or imag
     padding = 2
-    re_min = min(constel.real)*padding
-    im_min = min(constel.imag)*padding
-    re_max = max(constel.real)*padding
-    im_max = max(constel.imag)*padding
+    re_min = min(constel.real) * padding
+    im_min = min(constel.imag) * padding
+    re_max = max(constel.real) * padding
+    im_max = max(constel.imag) * padding
     max_amp = max([abs(re_min), abs(im_min), re_max, im_max])
 
     npts = int(2.0**prec)
-    #grid will be generated with regular size/scale to simplify life
+    # grid will be generated with regular size/scale to simplify life
     yrng = numpy.linspace(-max_amp, max_amp, npts)
     xrng = yrng
 
@@ -171,9 +171,9 @@ def calc_soft_dec_from_table(sample, table, prec, Es=1):
 
     max_index = lut_scale**2
 
-    while(index >= max_index):
+    while (index >= max_index):
         index -= lut_scale
-    while(index < 0):
+    while (index < 0):
         index += lut_scale
 
     return table[int(index)]
@@ -212,7 +212,7 @@ def calc_soft_dec(sample, constel, symbols, npwr=1):
 
         # Calculate the probability factor from the distance and the
         # scaled noise power.
-        d = numpy.exp(-dist / (npwr*2.0))
+        d = numpy.exp(-dist / (npwr * 2.0))
 
         for j in range(k):
             # Get the bit at the jth index
@@ -220,7 +220,7 @@ def calc_soft_dec(sample, constel, symbols, npwr=1):
             bit = (symbols[i] & mask) >> j
 
             # If the bit is a 0, add to the probability of a zero
-            if(bit == 0):
+            if (bit == 0):
                 tmp[2 * j + 0] += d
             # else, add to the probability of a one
             else:
@@ -242,12 +242,12 @@ def show_table(table):
     subi = 1
     subj = 0
     for i in reversed(list(range(prec + 1))):
-        if(i == prec // 2):
+        if (i == prec // 2):
             pp += "-----" + prec * ((nbits * 8) + 3) * "-" + "\n"
             subi = 0
             continue
         for j in range(prec + 1):
-            if(j == prec // 2):
+            if (j == prec // 2):
                 pp += "| "
                 subj = 1
             else:

@@ -18,12 +18,14 @@ from Generate_LDPC_matrix_functions import (
 )
 
 import argparse
-parser = argparse.ArgumentParser(description="Set LDPC parity check matrix properties")
-parser.add_argument('-n', type = int, help='Block length')
-parser.add_argument('-p', type = int, help='Column weight (parity bits)')
-parser.add_argument('-q', type = int, help='Row weight (codeword bits)')
-parser.add_argument('-i', type = int, help='R&U Optimization iterations', default=100)
-parser.add_argument('-v', type = int, help='Output Verbosity', default=0)
+parser = argparse.ArgumentParser(
+    description="Set LDPC parity check matrix properties")
+parser.add_argument('-n', type=int, help='Block length')
+parser.add_argument('-p', type=int, help='Column weight (parity bits)')
+parser.add_argument('-q', type=int, help='Row weight (codeword bits)')
+parser.add_argument(
+    '-i', type=int, help='R&U Optimization iterations', default=100)
+parser.add_argument('-v', type=int, help='Output Verbosity', default=0)
 
 args = parser.parse_args()
 
@@ -47,13 +49,14 @@ args = parser.parse_args()
 
 # First, generate a regular LDPC parity check matrix. Specify
 # the properties desired. For example:
-n = args.n # number of columns, corresponds to codeword length
+n = args.n  # number of columns, corresponds to codeword length
 p = args.p  # column weight
 q = args.q  # row weight
-iters = args.i #iterations for best matrix
+iters = args.i  # iterations for best matrix
 verbosity = args.v
 
-print("Step 1/3 - Generating parity check matrix for target rate: ", 1-(p/q), " length: ", n, " bits.")
+print("Step 1/3 - Generating parity check matrix for target rate: ",
+      1 - (p / q), " length: ", n, " bits.")
 parity_check_matrix = LDPC_matrix(n_p_q=[n, p, q])
 
 # Richardson and Urbanke's preprocessing method requires a full rank

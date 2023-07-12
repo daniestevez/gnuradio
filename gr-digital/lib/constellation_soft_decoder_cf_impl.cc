@@ -21,7 +21,8 @@ namespace digital {
 constellation_soft_decoder_cf::sptr
 constellation_soft_decoder_cf::make(constellation_sptr constellation, float npwr)
 {
-    return gnuradio::make_block_sptr<constellation_soft_decoder_cf_impl>(constellation, npwr);
+    return gnuradio::make_block_sptr<constellation_soft_decoder_cf_impl>(constellation,
+                                                                         npwr);
 }
 
 constellation_soft_decoder_cf_impl::constellation_soft_decoder_cf_impl(
@@ -35,7 +36,9 @@ constellation_soft_decoder_cf_impl::constellation_soft_decoder_cf_impl(
       d_bps(constellation->bits_per_symbol()),
       d_npwr(npwr)
 {
-    if (d_npwr > 0){d_constellation->set_npwr(d_npwr);}
+    if (d_npwr > 0) {
+        d_constellation->set_npwr(d_npwr);
+    }
 }
 
 void constellation_soft_decoder_cf_impl::set_npwr(float npwr)

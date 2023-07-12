@@ -249,15 +249,16 @@ void constellation::gen_soft_dec_lut(int precision)
     // We know we've normalized the constellation, so the min/max
     // dimensions in either direction are scaled to +/-1.
     float maxd = 1.0f;
-//the above comment isn't really true, but LUT is funky so we'll scale our points inside the +-1 LUT
-    //we will multiply inputs to obtain LLR's for points with the scale ptscale instead of +-1
-    float ptscale = 2.0f*d_maxamp;
+    // the above comment isn't really true, but LUT is funky so we'll scale our points
+    // inside the +-1 LUT we will multiply inputs to obtain LLR's for points with the
+    // scale ptscale instead of +-1
+    float ptscale = 2.0f * d_maxamp;
     float step = (2.0f * maxd) / (d_lut_scale - 1);
     float y = -maxd;
     while (y < maxd + step) {
         float x = -maxd;
         while (x < maxd + step) {
-            gr_complex pt = gr_complex(x*ptscale, y*ptscale);
+            gr_complex pt = gr_complex(x * ptscale, y * ptscale);
             d_soft_dec_lut.push_back(calc_soft_dec(pt));
             x += step;
         }
@@ -281,7 +282,7 @@ std::vector<float> constellation::calc_soft_dec(gr_complex sample)
         float dist = powf(std::abs(sample - d_constellation[i]), 2.0f);
         // Calculate the probability factor from the distance and
         // the scaled noise power.
-        float d = expf(-dist / (d_npwr*2.0f));
+        float d = expf(-dist / (d_npwr * 2.0f));
 
         if (d_apply_pre_diff_code)
             v = d_pre_diff_code[i];
@@ -322,9 +323,7 @@ void constellation::set_soft_dec_lut(const std::vector<std::vector<float>>& soft
     d_lut_scale = powf(2.0, static_cast<float>(precision));
 }
 
-void constellation::set_npwr(float npwr){
-    d_npwr = npwr;
-}
+void constellation::set_npwr(float npwr) { d_npwr = npwr; }
 
 bool constellation::has_soft_dec_lut() { return !d_soft_dec_lut.empty(); }
 
@@ -337,9 +336,9 @@ std::vector<float> constellation::soft_decision_maker(gr_complex sample)
         // that will put us in the next row of the 2D LUT.
         // Since we are expecting inputs between +-1. We will scale to
         // match the constellation+padding defined in the LUT
-        float ptscale = 2.0f*d_maxamp;
-        float xre = branchless_clip(sample.real()/ptscale, 1-1e-7);
-        float xim = branchless_clip(sample.imag()/ptscale, 1-1e-7);
+        float ptscale = 2.0f * d_maxamp;
+        float xre = branchless_clip(sample.real() / ptscale, 1 - 1e-7);
+        float xim = branchless_clip(sample.imag() / ptscale, 1 - 1e-7);
 
         // We normalize the constellation in the ctor, so we know that
         // the maximum dimensions go from -1 to +1. We can infer the x
@@ -393,8 +392,8 @@ void constellation::max_min_axes()
         d_re_min = d_im_min;
     if (d_re_max == 0)
         d_re_max = d_im_max;
-            
-    d_maxamp = std::max({d_re_max, -d_re_min, d_im_max, -d_im_min});
+
+    d_maxamp = std::max({ d_re_max, -d_re_min, d_im_max, -d_im_min });
 }
 
 /********************************************************************/

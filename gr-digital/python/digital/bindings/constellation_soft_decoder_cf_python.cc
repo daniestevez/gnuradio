@@ -42,7 +42,10 @@ void bind_constellation_soft_decoder_cf(py::module& m)
              py::arg("constellation"),
              py::arg("npwr") = -1,
              D(constellation_soft_decoder_cf, make))
-        .def("set_npwr", &constellation_soft_decoder_cf::set_npwr, py::arg("npwr") ,D(constellation_soft_decoder_cf, set_npwr))
+        .def("set_npwr",
+             &constellation_soft_decoder_cf::set_npwr,
+             py::arg("npwr"),
+             D(constellation_soft_decoder_cf, set_npwr))
 
 
         .def("set_constellation",
