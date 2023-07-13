@@ -180,7 +180,7 @@ void awgn_bp::update_vars()
         lr[var] = _sum + excluded;
         // lr values _sum+excluded are broken here nan or even Inf. rx_lr is still valid
         // though std::cout << " lr:" << _sum+excluded << " rx_lr:" << rx_lr[var]; _sum is
-        //nan but excluded is valid for first block. then both nan. std::cout << " _sum:"
+        // nan but excluded is valid for first block. then both nan. std::cout << " _sum:"
         // << _sum << " excluded:" << excluded;
     }
     // std::cout << std::endl;
