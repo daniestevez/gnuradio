@@ -85,6 +85,29 @@ def soft_dec_table_generator(soft_dec_gen, prec, Es=1):
     return table
 
 
+def const_normalization(constel, method="POWER"):
+    constel = numpy.array(constel)
+
+    # normalize constellation to unit power
+    if method == "POWER":
+        power = 0
+        for point in constel:
+            power += numpy.abs(point)**2
+        amplitude = numpy.sqrt(power / len(constel))
+        constel = constel / amplitude
+
+    return constel
+
+def min_max_axes(constel):
+    constel = numpy.array(constel)
+    re_min = min(constel.real)
+    im_min = min(constel.imag)
+    re_max = max(constel.real)
+    im_max = max(constel.imag)
+    max_amp = numpy.float32(max([abs(re_min), abs(im_min), re_max, im_max]))
+
+    return max_amp
+
 def soft_dec_table(constel, symbols, prec, npwr=1):
     '''
     Similar in nature to soft_dec_table_generator above. Instead, this
@@ -103,39 +126,39 @@ def soft_dec_table(constel, symbols, prec, npwr=1):
     a bit more expensive to generate the LUT, though it should be
     one-time work.
     '''
-    # normalize constellation to unit power
-    power = 0
-    constel = numpy.array(constel)
-    for point in constel:
-        power += numpy.abs(point)**2
-    amplitude = numpy.sqrt(power / len(constel))
-    constel = constel / amplitude
-    # print("Max soft constellation amp: ", max(abs(constel)), " pwr:", power)
-
     # padding will simply be 2x the largest re or imag
-    padding = 2
-    re_min = min(constel.real) * padding
-    im_min = min(constel.imag) * padding
-    re_max = max(constel.real) * padding
-    im_max = max(constel.imag) * padding
-    max_amp = max([abs(re_min), abs(im_min), re_max, im_max])
+    padding = numpy.float32(2.0)
 
-    npts = int(2.0**prec)
-    # grid will be generated with regular size/scale to simplify life
-    yrng = numpy.linspace(-max_amp, max_amp, npts)
-    xrng = yrng
+    constel = const_normalization(constel, "POWER")
+    max_amp = min_max_axes(constel)
 
+    d_lut_scale = numpy.float32(2.0**int(prec))
+
+    #We know we've normalized the constellation, so the min/max
+    #imensions in either direction are scaled to +/-1.
+    maxd = numpy.float32(1.0 * padding)
+    #the above comment isn't really true, but LUT is funky so we'll scale our points
+    #inside the +-1 LUT we will multiply inputs to obtain LLR's for points with the
+    #scale ptscale instead of +-1
+    ptscale = numpy.float32(2.0 * max_amp * (1.0 - (2.0 / d_lut_scale)))
+    step = numpy.float32((2.0 * maxd) / (d_lut_scale - 1))
+    y = -maxd
     table = []
 
-    for y in yrng:
-        for x in xrng:
-            pt = complex(x, y)
-            decs = calc_soft_dec(pt, constel, symbols, npwr)
-            table.append(decs)
+    increment = numpy.float32(maxd + step)
+
+    while y < increment:
+        x = -maxd
+        while x < increment:
+            pt = complex(x * ptscale, y * ptscale)
+            table.append(calc_soft_dec(pt, constel, symbols, npwr))
+            x = x + step
+        y = y + step
+
     return table
 
 
-def calc_soft_dec_from_table(sample, table, prec, Es=1):
+def calc_soft_dec_from_table(sample, table, prec : numpy.float32, d_maxamp=1):
     '''
     Takes in a complex sample and converts it from the coordinates
     (-1,-1) to (1,1) into an index value. The index value points to a
@@ -158,25 +181,41 @@ def calc_soft_dec_from_table(sample, table, prec, Es=1):
     calculate the soft decisions as we would given the full
     constellation.
     '''
-    lut_scale = 2.0**prec
-    maxd = Es * numpy.sqrt(2.0) / 2.0
-    scale = (lut_scale) / (2.0 * maxd)
+    d_lut_scale = int(2**prec)
+    d_padding = 2.0
+    ptscale = numpy.float32(d_padding * 2.0 * d_maxamp)
+    limit =  numpy.float32(1 - 1e-7)
 
-    alpha = 0.99  # to keep index within bounds
-    xre = sample.real
-    xim = sample.imag
-    xre = ((maxd + min(alpha * maxd, max(-alpha * maxd, xre))) * scale)
-    xim = ((maxd + min(alpha * maxd, max(-alpha * maxd, xim))) * scale)
-    index = int(xre) + lut_scale * int(xim)
+    xre = branchless_clip(numpy.float32(numpy.float32(sample.real) / ptscale), limit)
+    xim = branchless_clip(numpy.float32(numpy.float32(sample.imag) / ptscale), limit)
 
-    max_index = lut_scale**2
+    #We normalize the constellation in the ctor, so we know that
+    #the maximum dimensions go from -1 to +1. We can infer the x
+    # and y scale directly.
+    scale = numpy.float32((d_lut_scale-2.0) / 2.0)
+    # Convert the clipped x and y samples to nearest index offset
 
+    xre = numpy.floor(numpy.float32((1.0 + xre) *  scale)) + 1
+    xim = numpy.floor(numpy.float32((1.0 + xim) *  scale)) + 1
+
+    point = table_lookup(xre, xim, d_lut_scale, table)
+
+    return point
+
+    
+def table_lookup(xre, xim, d_lut_scale, table):
+    index = int(numpy.float32(d_lut_scale * xim + xre))
+    max_index = d_lut_scale * d_lut_scale
+    # Make sure we are in bounds of the index
     while (index >= max_index):
-        index -= lut_scale
+        index -= d_lut_scale
     while (index < 0):
-        index += lut_scale
+        index += d_lut_scale
+    return table[index]
 
-    return table[int(index)]
+def branchless_clip( x,  clip):
+
+    return numpy.float32( 0.5 * (abs(x + clip) - abs(x - clip)))
 
 
 def calc_soft_dec(sample, constel, symbols, npwr=1):

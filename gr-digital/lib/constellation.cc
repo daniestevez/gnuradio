@@ -45,42 +45,11 @@ constellation::constellation(std::vector<gr_complex> constell,
       d_im_max(1e20),
       d_lut_precision(0),
       d_lut_scale(0),
-      d_npwr(npwr)
+      d_npwr(npwr),
+      d_padding(2.0)
 {
     unsigned int constsize = d_constellation.size();
-    switch (normalization) {
-    case NO_NORMALIZATION: {
-        break;
-    }
-    case POWER_NORMALIZATION: {
-        // Scale constellation points so that average power is 1.
-        float summed_power = 0;
-        for (unsigned int i = 0; i < constsize; i++) {
-            gr_complex c = d_constellation[i];
-            summed_power += std::norm(c);
-        }
-        d_scalefactor = sqrt(constsize / summed_power);
-        for (unsigned int i = 0; i < constsize; i++) {
-            d_constellation[i] = d_constellation[i] * d_scalefactor;
-        }
-        break;
-    }
-    case AMPLITUDE_NORMALIZATION: {
-        // Scale constellation points so that average magnitude is 1.
-        float summed_mag = 0;
-        for (unsigned int i = 0; i < constsize; i++) {
-            gr_complex c = d_constellation[i];
-            summed_mag += std::abs(c);
-        }
-        d_scalefactor = constsize / summed_mag;
-        for (unsigned int i = 0; i < constsize; i++) {
-            d_constellation[i] = d_constellation[i] * d_scalefactor;
-        }
-        break;
-    }
-    default:
-        throw std::runtime_error("Invalid constellation normalization type.");
-    }
+    normalize(normalization);
 
     if (pre_diff_code.empty())
         d_apply_pre_diff_code = false;
@@ -105,12 +74,51 @@ constellation::constellation()
       d_im_max(1e20),
       d_lut_precision(0.0),
       d_lut_scale(0.0),
-      d_npwr(1.0)
+      d_npwr(1.0),
+      d_padding(2.0)
 {
     calc_arity();
 }
 
 constellation::~constellation() {}
+
+void constellation::normalize(normalization_t normalization)
+{
+    unsigned int constsize = d_constellation.size();
+    switch (normalization) {
+    case NO_NORMALIZATION: {
+        break;
+    }
+    case POWER_NORMALIZATION: {
+        // Scale constellation points so that average power is 1.
+        float summed_power = 0;
+        for (unsigned int i = 0; i < constsize; i++) {
+            gr_complex c = d_constellation[i];
+            summed_power += std::norm(c);
+        }
+        d_scalefactor = sqrt(summed_power / constsize);
+        for (unsigned int i = 0; i < constsize; i++) {
+            d_constellation[i] = d_constellation[i] / d_scalefactor;
+        }
+        break;
+    }
+    case AMPLITUDE_NORMALIZATION: {
+        // Scale constellation points so that average magnitude is 1.
+        float summed_mag = 0;
+        for (unsigned int i = 0; i < constsize; i++) {
+            gr_complex c = d_constellation[i];
+            summed_mag += std::abs(c);
+        }
+        d_scalefactor = constsize / summed_mag;
+        for (unsigned int i = 0; i < constsize; i++) {
+            d_constellation[i] = d_constellation[i] * d_scalefactor;
+        }
+        break;
+    }
+    default:
+        throw std::runtime_error("Invalid constellation normalization type.");
+    }
+}
 
 //! Returns the constellation points for a symbol value
 void constellation::map_to_points(unsigned int value, gr_complex* points)
@@ -248,11 +256,11 @@ void constellation::gen_soft_dec_lut(int precision)
 
     // We know we've normalized the constellation, so the min/max
     // dimensions in either direction are scaled to +/-1.
-    float maxd = 1.0f;
+    float maxd = 1.0f * d_padding;
     // the above comment isn't really true, but LUT is funky so we'll scale our points
     // inside the +-1 LUT we will multiply inputs to obtain LLR's for points with the
     // scale ptscale instead of +-1
-    float ptscale = 2.0f * d_maxamp;
+    float ptscale = 2.0f * d_maxamp * (1.0f - (2.0f / d_lut_scale));
     float step = (2.0f * maxd) / (d_lut_scale - 1);
     float y = -maxd;
     while (y < maxd + step) {
@@ -336,18 +344,21 @@ std::vector<float> constellation::soft_decision_maker(gr_complex sample)
         // that will put us in the next row of the 2D LUT.
         // Since we are expecting inputs between +-1. We will scale to
         // match the constellation+padding defined in the LUT
-        float ptscale = 2.0f * d_maxamp;
-        float xre = branchless_clip(sample.real() / ptscale, 1 - 1e-7);
-        float xim = branchless_clip(sample.imag() / ptscale, 1 - 1e-7);
+        float ptscale = d_padding * 2.0f * d_maxamp;
+
+        float limit = 1.0f - 1e-7;
+        float xre = branchless_clip(sample.real() / ptscale, limit);
+        float xim = branchless_clip(sample.imag() / ptscale, limit);
 
         // We normalize the constellation in the ctor, so we know that
         // the maximum dimensions go from -1 to +1. We can infer the x
         // and y scale directly.
-        float scale = d_lut_scale / (2.0f);
+        float scale = (d_lut_scale - 2.0f) / (2.0f);
 
         // Convert the clipped x and y samples to nearest index offset
-        xre = floorf((1.0f + xre) * scale);
-        xim = floorf((1.0f + xim) * scale);
+        xre = floorf((1.0f + xre) * scale) + 1;
+        xim = floorf((1.0f + xim) * scale) + 1;
+
         int index = static_cast<int>(d_lut_scale * xim + xre);
 
         int max_index = d_lut_scale * d_lut_scale;
@@ -649,6 +660,8 @@ constellation_bpsk::constellation_bpsk()
     d_constellation[1] = gr_complex(1, 0);
     d_rotational_symmetry = 2;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 
@@ -692,6 +705,8 @@ constellation_qpsk::constellation_qpsk()
 
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 
@@ -751,6 +766,8 @@ constellation_dqpsk::constellation_dqpsk()
 
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 
@@ -800,6 +817,8 @@ constellation_8psk::constellation_8psk()
     d_constellation[7] = gr_complex(cos(11 * angle), sin(11 * angle));
     d_rotational_symmetry = 8;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 
@@ -846,6 +865,8 @@ constellation_8psk_natural::constellation_8psk_natural()
     d_constellation[7] = gr_complex(cos(13 * angle), sin(13 * angle));
     d_rotational_symmetry = 8;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 
@@ -903,6 +924,8 @@ constellation_16qam::constellation_16qam()
     d_constellation[15] = gr_complex(-3 * level, 1 * level);
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
+    normalization_t norm = POWER_NORMALIZATION;
+    normalize(norm);
     calc_arity();
 }
 

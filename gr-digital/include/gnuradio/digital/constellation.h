@@ -64,6 +64,9 @@ public:
     constellation();
     virtual ~constellation();
 
+    //! Normalizes the constellation
+    void normalize(normalization_t normalization);
+
     //! Returns the constellation points for a symbol value
     void map_to_points(unsigned int value, gr_complex* points);
     std::vector<gr_complex> map_to_points_v(unsigned int value);
@@ -209,6 +212,7 @@ protected:
     int d_lut_precision;
     float d_lut_scale;
     float d_npwr;
+    float d_padding;
 
     float get_distance(unsigned int index, const gr_complex* sample);
     unsigned int get_closest_point(const gr_complex* sample);
