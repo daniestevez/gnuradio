@@ -44,9 +44,13 @@ std::vector<uint8_t> cldpc::get_systematic_bits(std::vector<uint8_t> in)
     std::vector<uint8_t> data;
     data.resize(K);
     int index;
-    for (size_t i = 0; i < K; i++) {
+    /*    for (size_t i = 0; i < K; i++) {
         index = permute[i + rank_H];
         data[i] = in[index];
+        }*/
+    // hack: get the first K bits
+    for (size_t i = 0; i < K; i++) {
+        data[i] = in[i];
     }
     return data;
 }
