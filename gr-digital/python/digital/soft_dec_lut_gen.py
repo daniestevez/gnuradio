@@ -160,7 +160,7 @@ def soft_dec_table(constel, symbols, prec, npwr=1):
     return table
 
 
-def calc_soft_dec_from_table(sample, table, prec : numpy.float32, d_maxamp=1):
+def calc_soft_dec_from_table(sample, table, prec: numpy.float32, d_maxamp=1):
     '''
     Takes in a complex sample and converts it from the coordinates
     (-1,-1) to (1,1) into an index value. The index value points to a
@@ -214,6 +214,7 @@ def table_lookup(xre, xim, d_lut_scale, table):
     while (index < 0):
         index += d_lut_scale
     return table[index]
+
 
 def branchless_clip(x, clip):
 
