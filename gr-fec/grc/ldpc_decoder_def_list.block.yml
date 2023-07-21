@@ -27,9 +27,9 @@ parameters:
     label: AList File
     dtype: file_open
 -   id: sigma
-    label: Sigma
+    label: tanh clamp
     dtype: float
-    default: '0.5'
+    default: '2.3'
 -   id: max_iter
     label: Max Iterations
     dtype: int

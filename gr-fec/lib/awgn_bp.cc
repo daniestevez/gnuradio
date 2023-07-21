@@ -136,8 +136,8 @@ void awgn_bp::update_chks()
                 x = std::abs(Q[chk][w]) / 2.0;
                 // x = std::abs(Q[chk][w]);
                 // clamp tanh input (this is some BS, FIXME)
-                if (x > 2.35) {
-                    x = 2.35;
+                if (x > sigma) {
+                    x = sigma;
                 }
                 // compute prod(tanh(abs(LLR))/2)
                 tanh_prod = tanh_prod * std::tanh(x);

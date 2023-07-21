@@ -98,6 +98,7 @@ def const_normalization(constel, method="POWER"):
 
     return constel
 
+
 def min_max_axes(constel):
     constel = numpy.array(constel)
     re_min = min(constel.real)
@@ -107,6 +108,7 @@ def min_max_axes(constel):
     max_amp = numpy.float32(max([abs(re_min), abs(im_min), re_max, im_max]))
 
     return max_amp
+
 
 def soft_dec_table(constel, symbols, prec, npwr=1):
     '''
@@ -184,7 +186,7 @@ def calc_soft_dec_from_table(sample, table, prec : numpy.float32, d_maxamp=1):
     d_lut_scale = int(2**prec)
     d_padding = 2.0
     ptscale = numpy.float32(d_padding * 2.0 * d_maxamp)
-    limit =  numpy.float32(1 - 1e-7)
+    limit = numpy.float32(1 - 1e-7)
 
     xre = branchless_clip(numpy.float32(numpy.float32(sample.real) / ptscale), limit)
     xim = branchless_clip(numpy.float32(numpy.float32(sample.imag) / ptscale), limit)
@@ -192,17 +194,17 @@ def calc_soft_dec_from_table(sample, table, prec : numpy.float32, d_maxamp=1):
     #We normalize the constellation in the ctor, so we know that
     #the maximum dimensions go from -1 to +1. We can infer the x
     # and y scale directly.
-    scale = numpy.float32((d_lut_scale-2.0) / 2.0)
+    scale = numpy.float32((d_lut_scale - 2.0) / 2.0)
     # Convert the clipped x and y samples to nearest index offset
 
-    xre = numpy.floor(numpy.float32((1.0 + xre) *  scale)) + 1
-    xim = numpy.floor(numpy.float32((1.0 + xim) *  scale)) + 1
+    xre = numpy.floor(numpy.float32((1.0 + xre) * scale)) + 1
+    xim = numpy.floor(numpy.float32((1.0 + xim) * scale)) + 1
 
     point = table_lookup(xre, xim, d_lut_scale, table)
 
     return point
 
-    
+
 def table_lookup(xre, xim, d_lut_scale, table):
     index = int(numpy.float32(d_lut_scale * xim + xre))
     max_index = d_lut_scale * d_lut_scale
@@ -213,9 +215,9 @@ def table_lookup(xre, xim, d_lut_scale, table):
         index += d_lut_scale
     return table[index]
 
-def branchless_clip( x,  clip):
+def branchless_clip(x, clip):
 
-    return numpy.float32( 0.5 * (abs(x + clip) - abs(x - clip)))
+    return numpy.float32(0.5 * (abs(x + clip) - abs(x - clip)))
 
 
 def calc_soft_dec(sample, constel, symbols, npwr=1):
