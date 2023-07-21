@@ -240,6 +240,7 @@ class test_constellation(gr_unittest.TestCase):
         Es = 1.0
 
         c.set_npwr(Es)
+        c.normalize(digital.constellation.POWER_NORMALIZATION)
         table = digital.soft_dec_table(constel, code, prec, Es)
         constel = digital.const_normalization(constel, "POWER")
         maxamp = digital.min_max_axes(constel)

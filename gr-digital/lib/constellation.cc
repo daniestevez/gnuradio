@@ -660,8 +660,8 @@ constellation_bpsk::constellation_bpsk()
     d_constellation[1] = gr_complex(1, 0);
     d_rotational_symmetry = 2;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 
@@ -705,8 +705,8 @@ constellation_qpsk::constellation_qpsk()
 
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 
@@ -766,8 +766,8 @@ constellation_dqpsk::constellation_dqpsk()
 
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 
@@ -817,8 +817,8 @@ constellation_8psk::constellation_8psk()
     d_constellation[7] = gr_complex(cos(11 * angle), sin(11 * angle));
     d_rotational_symmetry = 8;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 
@@ -865,8 +865,8 @@ constellation_8psk_natural::constellation_8psk_natural()
     d_constellation[7] = gr_complex(cos(13 * angle), sin(13 * angle));
     d_rotational_symmetry = 8;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 
@@ -924,8 +924,8 @@ constellation_16qam::constellation_16qam()
     d_constellation[15] = gr_complex(-3 * level, 1 * level);
     d_rotational_symmetry = 4;
     d_dimensionality = 1;
-    normalization_t norm = POWER_NORMALIZATION;
-    normalize(norm);
+    // normalization_t norm = POWER_NORMALIZATION;
+    // normalize(norm);
     calc_arity();
 }
 

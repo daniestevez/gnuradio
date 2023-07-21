@@ -38,6 +38,7 @@ class test_constellation_soft_decoder(gr_unittest.TestCase):
 
         cnst = digital.constellation_calcdist(cnst_pts, code, 4, 1, digital.constellation.POWER_NORMALIZATION)
         cnst.set_soft_dec_lut(lut, int(prec))
+        cnst.normalize(digital.constellation.POWER_NORMALIZATION)
         src = blocks.vector_source_c(src_data)
         op = digital.constellation_soft_decoder_cf(cnst.base())
         dst = blocks.vector_sink_f()
