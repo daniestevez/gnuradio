@@ -158,10 +158,10 @@ void awgn_bp::update_vars()
     //(step 2) of LLR-BP tanh algo
     // iterate over columns of check matrix
     for (int var = 0; var < N; var++) {
-        _sum = rx_lr[var];
         excluded = double(0.0);
         // iterate over nonzero columns of check matrix
         for (int i = 0; i < num_nlist[var]; i++) {
+            _sum = rx_lr[var];
             c = nlist[var][i] - 1;
             // compute sum of LLRs excluding current value
             for (int iprime = 0; iprime < num_nlist[var]; iprime++) {
