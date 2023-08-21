@@ -136,17 +136,18 @@ void selector_impl::forecast(int noutput_items, gr_vector_int& ninput_items_requ
     for (unsigned i = 0; i < ninputs; i++) {
         ninput_items_required[i] = 0;
     }
+    gr::thread::scoped_lock l(d_mutex);
     ninput_items_required[d_input_index] = noutput_items;
     if (noutput_items == 1) {
         ninput_items_required[d_input_index] = 0;
-        fprintf(stderr, "[selector] forecast() lying and saying we can produce one output for free\n");
+        //        fprintf(stderr, "[selector] forecast() lying and saying we can produce one output for free\n");
     }
-    fprintf(stderr, "[selector] forecast(%d) d_input_index = %d, d_output_index = %d = {", noutput_items,
-            d_input_index, d_output_index);
+    /*    fprintf(stderr, "[selector] forecast(%d) d_input_index = %d, d_output_index = %d = {", noutput_items,
+          d_input_index, d_output_index);
     for (unsigned i = 0; i < ninputs; i++) {
         fprintf(stderr, "%d, ", ninput_items_required[i]);
     }
-    fprintf(stderr, "}\n");
+    fprintf(stderr, "}\n");*/
 }
 
 bool selector_impl::check_topology(int ninputs, int noutputs)
@@ -168,9 +169,9 @@ int selector_impl::general_work(int noutput_items,
     const auto in = reinterpret_cast<const uint8_t**>(input_items.data());
     auto out = reinterpret_cast<uint8_t**>(output_items.data());
 
+    gr::thread::scoped_lock l(d_mutex);
     unsigned int to_copy = std::min(ninput_items[d_input_index], noutput_items);
 
-    gr::thread::scoped_lock l(d_mutex);
     if (d_enabled) {
         auto nread = nitems_read(d_input_index);
         auto nwritten = nitems_written(d_output_index);
@@ -189,21 +190,22 @@ int selector_impl::general_work(int noutput_items,
         produce(d_output_index, to_copy);
     }
 
-    if (noutput_items == 1) {
+    /*    if (noutput_items == 1) {
         fprintf(stderr, "[selector] general_work() special case in which we're requested to produce only one output -> consume all input\n");
-    }
+        }*/
     for (unsigned int in_index = 0; in_index < ninput_items.size(); ++in_index) {
-        const auto to_consume = noutput_items == 1 ? static_cast<unsigned int>(ninput_items[in_index]) :
-            std::min(static_cast<unsigned int>(ninput_items[in_index]), to_copy);
+      //      const auto to_consume = /*noutput_items == 1 ?*/ static_cast<unsigned int>(ninput_items[in_index]);// :
+          /*std::min(static_cast<unsigned int>(ninput_items[in_index]), to_copy);*/
+        const auto to_consume = in_index == d_input_index ? to_copy : ninput_items[in_index];
         consume(in_index, to_consume);
     }
 
-    fprintf(stderr, "[selector] general_work() d_input_index = %d, d_output_index = %d finished: noutput_items = %d, to_copy = %u\n        ninput_items[] = {",
+    /*    fprintf(stderr, "[selector] general_work() d_input_index = %d, d_output_index = %d finished: noutput_items = %d, to_copy = %u\n        ninput_items[] = {",
             d_input_index, d_output_index, noutput_items, to_copy);
     for (unsigned int in_index = 0; in_index < ninput_items.size(); ++in_index) {
         fprintf(stderr, "%d, ", ninput_items[in_index]);
     }
-    fprintf(stderr, "}\n");
+    fprintf(stderr, "}\n");*/
     
     return WORK_CALLED_PRODUCE;
 }
